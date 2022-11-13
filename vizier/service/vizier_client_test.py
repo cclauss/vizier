@@ -27,6 +27,7 @@ from vizier.service import resources
 from vizier.service import study_pb2
 from vizier.service import vizier_client
 from vizier.service import vizier_service
+from vizier.service import vizier_service_pb2_grpc
 
 from absl.testing import absltest
 from absl.testing import parameterized
@@ -254,6 +255,31 @@ class VizierClientTest(parameterized.TestCase):
     metadata_delta = pyvizier.MetadataDelta(
         on_study=on_study_metadata, on_trials={1: on_trial1_metadata})
     self.client.update_metadata(metadata_delta)
+
+  def test_unset_endpoint_client(self):
+    local_client1 = vizier_client.VizierClient.from_endpoint(
+        service_endpoint=vizier_client.UNSET_ENDPOINT,
+        study_resource_name=self.study_resource_name,
+        client_id='local_client1')
+    self.assertIsInstance(local_client1._server,
+                          vizier_service_pb2_grpc.VizierServiceServicer)
+    local_client1._server.datastore.create_study(self.example_study)
+
+    # Check if the local server is shared.
+    local_client2 = vizier_client.VizierClient.from_endpoint(
+        vizier_client.UNSET_ENDPOINT,
+        study_resource_name=self.study_resource_name,
+        client_id='local_client2')
+    self.assertEqual(local_client1._server, local_client2._server)
+
+    # Check if server still exists globally in cache after clients are deleted.
+    del local_client1
+    del local_client2
+    local_client3 = vizier_client.VizierClient.from_endpoint(
+        vizier_client.UNSET_ENDPOINT,
+        study_resource_name=self.study_resource_name,
+        client_id='local_client3')
+    self.assertLen(local_client3.list_studies(), 1)
 
 
 if __name__ == '__main__':

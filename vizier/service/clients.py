@@ -25,11 +25,13 @@ from vizier.service import stubs_util
 from vizier.service import vizier_client
 from vizier.service import vizier_service_pb2_grpc
 
+UNSET_ENDPOINT = vizier_client.UNSET_ENDPOINT
+
 
 @attr.define
 class _EnviromentVariables:
   service_endpoint: str = attr.field(
-      default='UNSET', validator=attr.validators.instance_of(str))
+      default=UNSET_ENDPOINT, validator=attr.validators.instance_of(str))
 
 
 environment_variables = _EnviromentVariables()
